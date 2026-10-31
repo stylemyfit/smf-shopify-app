@@ -1,0 +1,98 @@
+{%- comment -%}
+  StyleMyFit "Find My Perfect Fit" button + result container - replaces the manual
+  <button onclick="openSMF()"> and <div id="stylemyfit-popup"> in the product template.
+  Hidden until smf-button.js confirms the product is eligible. Needs the StyleMyFit app embed.
+{%- endcomment -%}
+{{ 'smf-button.css' | asset_url | stylesheet_tag }}
+{%- liquid
+  assign logo_file = 'smf-logo-white.png'
+  if block.settings.logo_color == 'black'
+    assign logo_file = 'smf-logo-black.png'
+  endif
+-%}
+<div
+  class="smf-block"
+  data-smf-block
+  data-product-id="{{ product.id }}"
+  {% if request.design_mode %}data-smf-design-mode="true"{% endif %}
+  hidden
+  {{ block.shopify_attributes }}
+>
+  <button
+    type="button"
+    class="smf-button"
+    style="--smf-bg: {{ block.settings.bg_color }}; --smf-fg: {{ block.settings.text_color }}; --smf-radius: {{ block.settings.radius }}px;"
+  >
+    <span class="smf-button__label">
+      {{- block.settings.label | default: 'Find My Perfect Fit' | escape -}}
+    </span>
+    {%- if block.settings.show_logo -%}
+      <span class="smf-button__by">
+        <span class="smf-button__using">using</span>
+        <img
+          class="smf-button__logo"
+          src="{{ logo_file | asset_url }}"
+          alt="StyleMyFit"
+          width="1182"
+          height="178"
+        >
+      </span>
+    {%- endif -%}
+  </button>
+  <div id="stylemyfit-popup"></div>
+</div>
+
+{% schema %}
+{
+  "name": "StyleMyFit button",
+  "target": "section",
+  "enabled_on": { "templates": ["product"] },
+  "settings": [
+    {
+      "type": "text",
+      "id": "label",
+      "label": "Button label",
+      "default": "Find My Perfect Fit"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_logo",
+      "label": "Show \"using StyleMyFit\" logo",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "logo_color",
+      "label": "Logo color",
+      "info": "Use white on dark buttons and black on light buttons.",
+      "options": [
+        { "value": "white", "label": "White" },
+        { "value": "black", "label": "Black" }
+      ],
+      "default": "white"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Background color",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "range",
+      "id": "radius",
+      "label": "Corner radius",
+      "min": 0,
+      "max": 30,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    }
+  ]
+}
+{% endschema %}

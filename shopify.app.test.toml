@@ -1,0 +1,34 @@
+# StyleMyFit Shopify app configuration - TEST
+# Use with: shopify app deploy --config test   (or: shopify app config use test)
+# Run `shopify app config link --config test` once to fill client_id from the TEST app in the Partner Dashboard.
+# The client secret is never stored here - it lives in the Partner Dashboard and, for the
+# backend, in SHOPIFY_API_SECRET in .env.test.
+
+client_id = ""
+name = "StyleMyFit Test"
+handle = "stylemyfit-test"
+application_url = "https://test.stylemyfit.com"
+embedded = false
+
+[build]
+automatically_update_urls_on_dev = false
+include_config_on_deploy = true
+
+[access_scopes]
+scopes = "read_products"
+
+[auth]
+redirect_urls = [ "https://test.stylemyfit.com/shopify/auth/callback" ]
+
+[webhooks]
+api_version = "2025-07"
+
+# Storefront calls /apps/smf/chek_prd/?pageUrl=... (same origin, no CORS).
+# Shopify signs the request and forwards it to <url>/chek_prd/?pageUrl=...&shop=...&signature=...
+[app_proxy]
+url = "https://be.test.stylemyfit.com/api/v1/plugin"
+prefix = "apps"
+subpath = "smf"
+
+[pos]
+embedded = false

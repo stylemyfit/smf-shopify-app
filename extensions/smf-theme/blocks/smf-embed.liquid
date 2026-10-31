@@ -1,0 +1,44 @@
+{%- comment -%}
+  StyleMyFit app embed - replaces the manual <script src=".../smfplugin.js"> in theme.liquid.
+  Shopify injects app embeds (target: body) just before </body>, so the plugin initialises
+  exactly where the manual integration did.
+{%- endcomment -%}
+{%- if block.settings.enabled -%}
+  <script>
+    window.SMFShopify = {
+      endpoint: {{ block.settings.endpoint | default: '/apps/smf/chek_prd/' | json }},
+      failOpen: {{ block.settings.fail_open | json }}
+    };
+  </script>
+  <script src="https://plugin.stylemyfit.com/smfplugin.js"></script>
+  <script src="{{ 'smf-button.js' | asset_url }}" defer></script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "StyleMyFit",
+  "target": "body",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "enabled",
+      "label": "Enable StyleMyFit",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "endpoint",
+      "label": "Eligibility endpoint",
+      "info": "Called with ?pageUrl=<product page URL>. Leave as /apps/smf/chek_prd/ unless told otherwise.",
+      "default": "/apps/smf/chek_prd/"
+    },
+    {
+      "type": "checkbox",
+      "id": "fail_open",
+      "label": "Show button if the check fails",
+      "info": "When the eligibility check can't be reached, show the button anyway.",
+      "default": false
+    }
+  ]
+}
+{% endschema %}
