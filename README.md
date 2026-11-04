@@ -19,9 +19,9 @@ smf-shopify-app/
 ├── shopify.app.prod.toml             # PROD app: App Proxy -> be.stylemyfit.com, scopes (read_products)
 └── extensions/smf-theme/             # theme app extension
     ├── shopify.extension.toml
-    ├── blocks/smf-embed.liquid       # app embed: loads smfplugin.js + smf-button.js
-    ├── blocks/smf-button.liquid      # product block: button + #stylemyfit-popup
-    └── assets/smf-button.js, smf-button.css,
+    ├── blocks/smf-embed.liquid       # app embed: loads smfplugin.js + smf-fit-summary.js + smf-button.js
+    ├── blocks/smf-button.liquid      # product block: button + #stylemyfit-popup + saved-profile sizes card
+    └── assets/smf-button.js, smf-fit-summary.js, smf-button.css,
                smf-logo-white.png, smf-logo-black.png   # wordmark, copied from smf-customer-app-v2/public/brand
 ```
 
@@ -34,12 +34,33 @@ smf-shopify-app/
    `https://be.stylemyfit.com/api/v1/plugin/chek_prd/?pageUrl=...&shop=...&signature=...`
    (`be.test.stylemyfit.com` for the test app).
 4. The backend verifies the signature and matches the page URL to a product the same way the plugin does
-   (normalised URL, or domain + last path segment/handle). It returns `{"show": true}` only when the product
-   is active and its store is publishing and not retired. Responses are cached for 5 minutes.
-5. `true` shows the button. `false` removes the block. If the check can't be reached, the
+   (normalised URL, or domain + last path segment/handle). It returns a status: `1` not found, `2` found but
+   inactive, `3` active (product active, store publishing and not retired), plus `show` (true only for `3`).
+   Responses are cached for 5 minutes.
+5. Status `3` shows the button. `1` or `2` removes the block (in the theme editor it stays dimmed, and its
+   tooltip says whether the product is missing or not Live). If the check can't be reached, the
    "Show button if the check fails" setting decides. Answers are cached per product for the browser session.
 6. Click calls `window.MyWidget.initiateHandler()`. The plugin's default `onResult` writes the result into
    `#stylemyfit-popup`. `window.openSMF()` is still defined for old `onclick="openSMF()"` markup.
+7. **Sizes for saved profiles** (`smf-fit-summary.js`, block setting "Show sizes for saved profiles", on by default).
+   On status `3`, once the page has loaded and the browser is idle, it adds an invisible iframe
+   `<MyWidget.origin>/fit-summary.html?pageUrl=…&origin=…` from `smf-plugin-v2`.
+   - **Why an iframe:** saved profiles belong to the plugin's device id, which only the plugin's own origin can
+     read (the same partitioned cookie / storage the plugin panel uses on this store).
+   - **What the bridge does:** it only answers when `origin` is the product page's own site. It never creates a
+     device id. It calls `POST /api/v1/plugin/prediction/fit/summary/` and posts back only the name, shape,
+     whether the product is designed for that shape, recommended size and fit label of each profile (same rules
+     as the plugin's result page), plus the shapes the product is designed for.
+   - **The card:** drawn in a shadow root under the button, same design as the customer app's "Fit guidance" box:
+     a fixed title, "Designed with … shapes in mind", and each profile with its shape verdict and size.
+     - Profiles slide three at a time (arrows, dots, swipe). Tapping a profile selects it (kept in
+       `localStorage` `smf:active-profile`).
+     - The round StyleMyFit button (top right) calls `initiateHandler({ profileId, view: "result" })` for the
+       selected profile. The bridge returns at most 10 profiles; more show as "+N more", which opens the plugin.
+     - Logo: `smf-logo-icon.png`, passed in by the block as `data-smf-icon`.
+   - **Caching and refresh:** the data is cached for the browser session for 5 minutes. It's refreshed when the
+     plugin fires `smf:widget-closed`; each row shows a spinner meanwhile.
+   - **Theme editor:** shows a sample card whose buttons do nothing.
 
 The URL sent is `window.location.href`, the same value the plugin sends as `pageUrl`. A product therefore shows
 the button only if StyleMyFit has it under the domain shoppers see (e.g. `lesjumelles.ie`). Previews on
@@ -106,10 +127,13 @@ or after `shopify app config use test|prod`. That way nothing gets deployed to p
 `GET /api/v1/plugin/chek_prd/?pageUrl=<url>` in `smf-django-backend`
 (`src/views/plugin/chek_prd_api.py`).
 
-| Case                                            | Response                 |
-|-------------------------------------------------|--------------------------|
-| Product found, active, store publishing         | `200 {"show": true}`     |
-| Product inactive / store unpublished or retired | `200 {"show": false}`    |
-| Not found                                       | `200 {"show": false}`    |
-| Missing / invalid `pageUrl`                     | `400 {"show": false}`    |
-| Missing / bad signature, secret not configured  | `401 {"show": false}`    |
+| Case                                            | Response                                                           |
+|-------------------------------------------------|--------------------------------------------------------------------|
+| Product found, active, store publishing         | `200 {"show": true,  "status": 3, "status_label": "ACTIVE"}`       |
+| Product inactive / store unpublished or retired | `200 {"show": false, "status": 2, "status_label": "INACTIVE"}`     |
+| Not found                                       | `200 {"show": false, "status": 1, "status_label": "NOT_FOUND"}`    |
+| Missing / invalid `pageUrl`                     | `400 {"show": false}`                                              |
+| Missing / bad signature, secret not configured  | `401 {"show": false}`                                              |
+
+`show` is kept so older versions of `smf-button.js` keep working. When several products match, a Live one
+wins. The lookup is a single `LIMIT 1` query on the `idx_normalised_url` / `idx_domain_slug` indexes.

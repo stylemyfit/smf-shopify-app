@@ -40,6 +40,16 @@
     {%- endif -%}
   </button>
   <div id="stylemyfit-popup"></div>
+  {%- if block.settings.show_summary -%}
+    {%- comment -%} Sizes for the shopper's saved profiles - filled by smf-fit-summary.js {%- endcomment -%}
+    <div
+      class="smf-summary"
+      data-smf-summary
+      data-smf-icon="{{ 'smf-logo-icon.png' | asset_url }}"
+      style="--smf-card-radius: {{ block.settings.radius | at_most: 12 }}px;"
+      hidden
+    ></div>
+  {%- endif -%}
 </div>
 
 {% schema %}
@@ -92,6 +102,13 @@
       "step": 1,
       "unit": "px",
       "default": 0
+    },
+    {
+      "type": "checkbox",
+      "id": "show_summary",
+      "label": "Show sizes for saved profiles",
+      "info": "Shoppers who saved profiles in StyleMyFit see the recommended size for each one under the button, without opening it.",
+      "default": true
     }
   ]
 }

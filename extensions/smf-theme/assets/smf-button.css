@@ -90,5 +90,8 @@
   .smf-button:hover { transform: none; }
 }
 
+/* Saved-profile sizes card (rendered in a shadow root by smf-fit-summary.js) */
+.smf-summary[hidden] { display: none !important; }
+
 /* Theme editor only: product isn't eligible, shown dimmed so merchants can still style it */
 .smf-block--ineligible .smf-button { opacity: 0.4; }

@@ -1,0 +1,24 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+name = "smf-test-app-btn"
+application_url = "https://shopify.dev/apps/default-app-home"
+embedded = true
+client_id = "d62793ac66736fd86fcdb219c8e47eb6"
+
+[build]
+automatically_update_urls_on_dev = true
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = ""
+
+[auth]
+redirect_urls = [ "https://shopify.dev/apps/default-app-home/api/auth" ]
+
+[webhooks]
+api_version = "2027-01"
+
+[app_proxy]
+url = "https://be.test.stylemyfit.com/api/v1/plugin"
+prefix = "apps"
+subpath = "smf"
